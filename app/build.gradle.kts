@@ -78,9 +78,6 @@ dependencies {
     // Serialization
     implementation(libs.kotlinx.serialization.json)
 
-    // FFMPEG
-    implementation(libs.mobile.ffmpeg.full)
-
     // Image
     implementation(libs.coil.compose)
 
@@ -88,13 +85,7 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
 
     // Media3
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.common)
-    implementation(libs.androidx.media3.session)
-    implementation(libs.androidx.media3.exoplayer.dash)
-    implementation(libs.androidx.media3.exoplayer.hls)
-    implementation(libs.androidx.media3.exoplayer.rtsp)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

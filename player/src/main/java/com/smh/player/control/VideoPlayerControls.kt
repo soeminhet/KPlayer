@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.ScreenRotationAlt
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.WidthWide
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -56,6 +57,7 @@ fun VideoPlayerControls(
     currentMs: () -> Long,
     isPicSupport: Boolean,
     currentPosition: () -> Float,
+    bufferedPosition: () -> Float,
     onCurrentPositionChanged: (Float) -> Unit,
     onBack: () -> Unit,
     playing: () -> Boolean,
@@ -98,13 +100,14 @@ fun VideoPlayerControls(
             totalMs = totalMs,
             currentMs = currentMs,
             currentPosition = currentPosition,
+            bufferedPosition = bufferedPosition,
             onCurrentPositionChanged = onCurrentPositionChanged,
             isPicSupport = isPicSupport,
             resizeIcon = resizeIcon,
             onClickResize = onClickResize,
             onClickRotation = onClickRotation,
             onClickLock = onClickLock,
-            onClickPic = onClickPic
+            onClickPic = onClickPic,
         )
     }
 }
@@ -173,6 +176,7 @@ private fun BoxScope.BottomControls(
     totalMs: Long,
     currentMs: () -> Long,
     currentPosition: () -> Float,
+    bufferedPosition: () -> Float,
     onCurrentPositionChanged: (Float) -> Unit,
     isPicSupport: Boolean,
     resizeIcon: ImageVector,
@@ -232,18 +236,39 @@ private fun BoxScope.BottomControls(
                 style = MaterialTheme.typography.labelMedium
             )
 
-            androidx.compose.material.Slider(
-                value = currentPosition(),
-                onValueChange = onCurrentPositionChanged,
+            Box(
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 20.dp),
-                colors = SliderDefaults.colors(
-                    thumbColor = SoftBlue,
-                    activeTrackColor = SoftBlue,
-                    inactiveTrackColor = Color.White.copy(0.3f)
+                contentAlignment = Alignment.Center
+            ) {
+                androidx.compose.material.Slider(
+                    value = currentPosition(),
+                    onValueChange = onCurrentPositionChanged,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = SoftBlue,
+                        activeTrackColor = SoftBlue,
+                        inactiveTrackColor = Color.White.copy(0.3f)
+                    )
                 )
-            )
+
+                androidx.compose.material.LinearProgressIndicator(
+                    progress = bufferedPosition(),
+                    color = Color.White.copy(alpha = 0.3f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 9.dp),
+                )
+
+                androidx.compose.material.LinearProgressIndicator(
+                    progress = currentPosition() + 0.013f,
+                    color = SoftBlue,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 9.dp),
+                )
+            }
 
             Text(
                 text = totalMs.toInt().formatMSecondTime(),
@@ -279,7 +304,8 @@ private fun VideoPlayerControlsPreview() {
                 isPicSupport = true,
                 onClickPic = {},
                 onNext = {},
-                onPrevious = {}
+                onPrevious = {},
+                bufferedPosition = { 0.5f }
             )
         }
     }
@@ -308,7 +334,8 @@ private fun VideoPlayerControlsPortraitPreview() {
                 isPicSupport = false,
                 onClickPic = {},
                 onNext = {},
-                onPrevious = {}
+                onPrevious = {},
+                bufferedPosition = { 0.5f }
             )
         }
     }

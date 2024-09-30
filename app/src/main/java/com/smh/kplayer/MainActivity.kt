@@ -26,6 +26,8 @@ import com.smh.kplayer.route.localVideoFolderListRoute
 import com.smh.kplayer.route.localVideoPlayerRoute
 import com.smh.design.theme.KPlayerTheme
 import com.smh.design.util.PermissionUtils
+import com.smh.kplayer.route.OnlineVideoPlayerRoute
+import com.smh.kplayer.route.onlineVideoPlayerRoute
 import com.smh.kplayer.util.slideNavTransition
 import dagger.hilt.android.AndroidEntryPoint
 import kotlin.reflect.KClass
@@ -58,7 +60,8 @@ class MainActivity : ComponentActivity() {
             val isHideStatusBar by remember(backStackEntry) {
                 derivedStateOf {
                     backStackEntry.hasAnyRoute(
-                        LocalVideoPlayerRoute::class
+                        LocalVideoPlayerRoute::class,
+                        OnlineVideoPlayerRoute::class
                     )
                 }
             }
@@ -80,6 +83,7 @@ class MainActivity : ComponentActivity() {
                         localVideoFolderListRoute(navController)
                         localVideoFileListRoute(navController)
                         localVideoPlayerRoute(navController)
+                        onlineVideoPlayerRoute(navController)
                     }
                 }
             }

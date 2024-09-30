@@ -1,5 +1,6 @@
 package com.smh.player
 
+import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.net.Uri
@@ -51,28 +52,34 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Timeline
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.dash.DashMediaSource
+import androidx.media3.exoplayer.hls.HlsMediaSource
+import androidx.media3.exoplayer.smoothstreaming.SsMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import com.smh.design.components.KAlertDialog
+import com.smh.design.components.KIconButton
+import com.smh.design.extension.findActivity
 import com.smh.design.extension.formatMSecondTime
-import com.smh.player.manager.BrightnessManager
-import com.smh.player.manager.CacheManager
-import com.smh.player.manager.PictureInPictureManager
-import com.smh.player.manager.VolumeManager
 import com.smh.player.control.BrightnessControlBox
 import com.smh.player.control.FastSeekControlBox
 import com.smh.player.control.VideoPlayerControls
 import com.smh.player.control.VolumeControlBox
-import com.smh.design.components.KAlertDialog
-import com.smh.design.components.KIconButton
-import com.smh.design.extension.findActivity
+import com.smh.player.manager.BrightnessManager
+import com.smh.player.manager.CacheManager
+import com.smh.player.manager.PictureInPictureManager
+import com.smh.player.manager.VolumeManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -98,10 +105,12 @@ fun VideoPlayer(
     val volumeManager = remember { VolumeManager(context) }
     val brightnessManager = remember { BrightnessManager(activity) }
     val pipManager = remember { PictureInPictureManager(context) }
+    val cacheManager = remember { CacheManager }
 
     var totalDuration by remember { mutableLongStateOf(0L) }
     var currentDuration by rememberSaveable { mutableLongStateOf(0L) }
     var currentProgress by remember { mutableFloatStateOf(0f) }
+    var bufferedProgress by remember { mutableFloatStateOf(0f) }
     var videoSize by remember { mutableStateOf(VideoSize.UNKNOWN) }
     var infoText by remember { mutableStateOf("") }
     var isPlaying by remember { mutableStateOf(false) }
@@ -139,7 +148,7 @@ fun VideoPlayer(
                 true,
             )
             .apply {
-                val cache = CacheManager.getCache(context)
+                val cache = cacheManager.getCache(context)
                 val cacheDataSourceFactory = CacheDataSource.Factory()
                     .setCache(cache)
                     .setUpstreamDataSourceFactory(DefaultDataSource.Factory(context))
@@ -174,6 +183,11 @@ fun VideoPlayer(
                         Log.i("ZOOM_VIDEO_SIZE", videoSize.width.toString())
                         videoSize = videoSizeInternal
                     }
+
+                    override fun onIsLoadingChanged(isLoading: Boolean) {
+                        super.onIsLoadingChanged(isLoading)
+                        Log.i("EXO_PLAYER", "Loading: $isLoading")
+                    }
                 })
             }
     }
@@ -191,13 +205,10 @@ fun VideoPlayer(
     }
 
     LaunchedEffect(uri, exoPlayer) {
-        val mediaItem = MediaItem.fromUri(uri)
-        val mediaSource = ProgressiveMediaSource.Factory(DefaultDataSource.Factory(context))
-            .setContinueLoadingCheckIntervalBytes(1024 * 1024 * 100)
-            .createMediaSource(mediaItem)
+        val mediaSource = generateMediaSourceFactory(context, uri)
         exoPlayer.setMediaSource(mediaSource)
         exoPlayer.prepare()
-        exoPlayer.play()
+        exoPlayer.playWhenReady = true
     }
 
     LaunchedEffect(isPlaying) {
@@ -205,6 +216,7 @@ fun VideoPlayer(
             currentDuration = exoPlayer.currentPosition
             if (currentDuration > 0 && totalDuration > 0) {
                 currentProgress = (currentDuration / 1000f) / (totalDuration / 1000f)
+                bufferedProgress  = ((currentDuration + exoPlayer.totalBufferedDuration) / 1000f) / (totalDuration / 1000f)
             }
             delay(1000L)
         }
@@ -359,6 +371,7 @@ fun VideoPlayer(
                 currentMs = { currentDuration },
                 totalMs = totalDuration,
                 currentPosition = { currentProgress },
+                bufferedPosition = { bufferedProgress },
                 onCurrentPositionChanged = { value ->
                     currentProgress = value
                     val seekPosition = totalDuration * value
@@ -470,6 +483,7 @@ fun VideoPlayer(
         lifecycleOwner.lifecycle.addObserver(observer)
 
         onDispose {
+            cacheManager.releaseCache()
             lifecycleOwner.lifecycle.removeObserver(observer)
             exoPlayer.release()
         }
@@ -546,3 +560,34 @@ private fun handlePanGesture(
         }
     }
 }
+
+@OptIn(UnstableApi::class)
+fun generateMediaSourceFactory(
+    context: Context,
+    videoUri: Uri
+): MediaSource {
+    val dataSourceFactory = if (videoUri.scheme == "http" || videoUri.scheme == "https") {
+        DefaultDataSource.Factory(context, DefaultHttpDataSource.Factory().setAllowCrossProtocolRedirects(true))
+    } else {
+        DefaultDataSource.Factory(context)
+    }
+    val uriPath = videoUri.lastPathSegment ?: ""
+
+    return when {
+        uriPath.endsWith(".mpd", ignoreCase = true) -> {
+            DashMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(videoUri))
+        }
+        uriPath.endsWith(".m3u8", ignoreCase = true) -> {
+            HlsMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(videoUri))
+        }
+        uriPath.endsWith(".ism", ignoreCase = true) || uriPath.endsWith("/Manifest", ignoreCase = true) -> {
+            SsMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(videoUri))
+        }
+        else -> {
+            ProgressiveMediaSource.Factory(dataSourceFactory)
+                .setContinueLoadingCheckIntervalBytes(1024 * 1024 * 100)
+                .createMediaSource(MediaItem.fromUri(videoUri))
+        }
+    }
+}
+

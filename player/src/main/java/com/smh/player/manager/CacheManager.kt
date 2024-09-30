@@ -23,4 +23,9 @@ object CacheManager {
         }
         return cacheInstance!!
     }
+
+    fun releaseCache() {
+        cacheInstance?.release()
+        cacheInstance = null
+    }
 }

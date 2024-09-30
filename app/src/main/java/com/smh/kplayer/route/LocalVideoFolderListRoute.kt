@@ -14,6 +14,9 @@ fun NavGraphBuilder.localVideoFolderListRoute(navController: NavController) {
         LocalVideoFolderListScreen(
             toFolderDetail = { folderName ->
                 navController.navigate(LocalVideoFileListRoute(folderName = folderName))
+            },
+            toOnlineVideoPlayer = { url ->
+                navController.navigate(OnlineVideoPlayerRoute(url = url))
             }
         )
     }
