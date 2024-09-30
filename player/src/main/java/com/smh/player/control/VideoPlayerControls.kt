@@ -37,6 +37,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -146,6 +148,8 @@ private fun BoxScope.CenterControls(
     onNext: () -> Unit,
     onPrevious: () -> Unit
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Row(
         modifier = Modifier.align(Alignment.Center),
         verticalAlignment = Alignment.CenterVertically,
@@ -154,7 +158,10 @@ private fun BoxScope.CenterControls(
         KIconButton(
             icon = Icons.Default.SkipPrevious,
             iconSize = 40.dp,
-            onClick = onPrevious,
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onPrevious()
+            },
         )
 
         KIconButton(
@@ -166,7 +173,10 @@ private fun BoxScope.CenterControls(
         KIconButton(
             icon = Icons.Default.SkipNext,
             iconSize = 40.dp,
-            onClick = onNext
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onNext()
+            }
         )
     }
 }
