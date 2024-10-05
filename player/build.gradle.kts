@@ -56,7 +56,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
 
     // FFMPEG
-    implementation(libs.mobile.ffmpeg.full)
+    // implementation(libs.mobile.ffmpeg.full)
 
     // Icon
     implementation(libs.androidx.material.icons.extended)
@@ -70,6 +70,9 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.exoplayer.rtsp)
     implementation(libs.androidx.media3.exoplayer.smoothstreaming)
+
+    implementation(libs.nextlib.media3ext)
+    implementation(libs.nextlib.mediainfo)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

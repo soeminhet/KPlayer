@@ -4,12 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
-import com.smh.kplayer.data.HARDWARE_ACCELERATION
-import com.smh.kplayer.data.MemoryCacheDataSource
-import com.smh.player.manager.FFMPEGManager
-import com.smh.player.manager.VideoInfoModel
 import com.smh.kplayer.repository.GlobalFileRepository
 import com.smh.kplayer.route.LocalVideoFileListRoute
+import com.smh.player.manager.FFMPEGManager
+import com.smh.player.manager.VideoInfoModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -24,7 +22,6 @@ import javax.inject.Inject
 class LocalVideoFileListViewModel @Inject constructor(
     private val globalFileRepository: GlobalFileRepository,
     private val ffmpegManager: FFMPEGManager,
-    private val memoryCacheDataSource: MemoryCacheDataSource,
     savedStateHandle: SavedStateHandle
 ): ViewModel() {
     private val route = savedStateHandle.toRoute<LocalVideoFileListRoute>()
@@ -53,11 +50,9 @@ class LocalVideoFileListViewModel @Inject constructor(
                     videoFiles = files
                 )
             }
-
-            val isHardwareDecodeEnabled = memoryCacheDataSource.get(HARDWARE_ACCELERATION) ?: false
             files.map { file ->
                 async {
-                    val thumbnail = ffmpegManager.checkCacheAndExtractFFMPEG(file.uri, isHardwareDecodeEnabled)
+                    val thumbnail = ffmpegManager.checkCacheAndExtractFFMPEG(file.uri)
                     val updatedFile = file.copy(thumbnail = thumbnail)
                     _uiState.update { state ->
                         state.copy(

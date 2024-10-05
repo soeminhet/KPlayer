@@ -52,13 +52,13 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.Timeline
 import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.hls.HlsMediaSource
@@ -66,6 +66,7 @@ import androidx.media3.exoplayer.smoothstreaming.SsMediaSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.smh.design.components.KAlertDialog
@@ -80,6 +81,7 @@ import com.smh.player.manager.BrightnessManager
 import com.smh.player.manager.CacheManager
 import com.smh.player.manager.PictureInPictureManager
 import com.smh.player.manager.VolumeManager
+import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.NextRenderersFactory
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -137,6 +139,12 @@ fun VideoPlayer(
 
     val exoPlayer = remember {
         ExoPlayer.Builder(context)
+            .setRenderersFactory(
+                NextRenderersFactory(context)
+                    .setEnableDecoderFallback(true)
+                    .setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON)
+            )
+            .setTrackSelector(DefaultTrackSelector(context))
             .setLoadControl(loadControl)
             .setSeekBackIncrementMs(10000)
             .setSeekBackIncrementMs(10000)
