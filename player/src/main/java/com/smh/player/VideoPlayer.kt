@@ -217,6 +217,11 @@ fun VideoPlayer(
         exoPlayer.playWhenReady = true
     }
 
+    LaunchedEffect(uri) {
+        exoPlayer.seekTo(0L)
+        currentProgress = 0f
+    }
+
     LaunchedEffect(isPlaying) {
         while (isPlaying) {
             currentDuration = exoPlayer.currentPosition
@@ -568,7 +573,7 @@ private fun handlePanGesture(
 }
 
 @OptIn(UnstableApi::class)
-fun generateMediaSourceFactory(
+private fun generateMediaSourceFactory(
     context: Context,
     videoUri: Uri
 ): MediaSource {
