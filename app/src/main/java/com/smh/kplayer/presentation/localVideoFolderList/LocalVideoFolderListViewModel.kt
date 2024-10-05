@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.smh.kplayer.repository.GlobalFileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -33,8 +35,22 @@ class LocalVideoFolderListViewModel @Inject constructor(
             }
         }
     }
+
+    fun forceRefresh() {
+        _uiState.update {
+            it.copy(isRefreshing = true)
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            globalFileRepository.getRootVideoFolderNamesAndCount(forceRefresh = true)
+            delay(300)
+            _uiState.update {
+                it.copy(isRefreshing = false)
+            }
+        }
+    }
 }
 
 data class LocalVideoFolderUiState(
+    val isRefreshing: Boolean = false,
     val folders: List<Pair<String, Int>> = emptyList()
 )

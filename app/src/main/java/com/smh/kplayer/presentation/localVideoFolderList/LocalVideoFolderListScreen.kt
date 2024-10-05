@@ -2,14 +2,19 @@ package com.smh.kplayer.presentation.localVideoFolderList
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -21,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,18 +50,25 @@ fun LocalVideoFolderListScreen(
     LocalVideoFolderListContent(
         uiState = uiState,
         toFolderDetail = toFolderDetail,
-        toOnlineVideoPlayer = toOnlineVideoPlayer
+        toOnlineVideoPlayer = toOnlineVideoPlayer,
+        onForceRefresh = viewModel::forceRefresh
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 private fun LocalVideoFolderListContent(
     uiState: LocalVideoFolderUiState,
     toFolderDetail: (String) -> Unit,
-    toOnlineVideoPlayer: (String) -> Unit
+    toOnlineVideoPlayer: (String) -> Unit,
+    onForceRefresh: () -> Unit
 ) {
     var showNetworkVideoLinkDialog by remember { mutableStateOf(false) }
+
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = uiState.isRefreshing,
+        onRefresh = onForceRefresh
+    )
 
     NetworkVideoLinkDialog(
         show = showNetworkVideoLinkDialog,
@@ -86,20 +99,32 @@ private fun LocalVideoFolderListContent(
             }
         }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
-                .verticalScroll(state = rememberScrollState())
                 .padding(paddingValues)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .fillMaxSize()
+                .pullRefresh(pullRefreshState)
         ) {
-            uiState.folders.fastForEach { folder ->
-                VideoFolderItem(
-                    folderName = folder.first,
-                    videoCount = folder.second,
-                    onClick = toFolderDetail
-                )
+            Column(
+                modifier = Modifier
+                    .verticalScroll(state = rememberScrollState())
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                uiState.folders.fastForEach { folder ->
+                    VideoFolderItem(
+                        folderName = folder.first,
+                        videoCount = folder.second,
+                        onClick = toFolderDetail
+                    )
+                }
             }
+
+            PullRefreshIndicator(
+                refreshing = uiState.isRefreshing,
+                state = pullRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
         }
     }
 }
@@ -118,7 +143,8 @@ private fun LocalVideoFolderListPreview() {
                 )
             ),
             toFolderDetail = {},
-            toOnlineVideoPlayer = {}
+            toOnlineVideoPlayer = {},
+            onForceRefresh = {}
         )
     }
 }
