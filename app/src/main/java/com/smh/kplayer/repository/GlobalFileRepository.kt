@@ -37,13 +37,15 @@ class GlobalFileRepositoryImpl @Inject constructor(
 
     override suspend fun getVideosInFolder(folderName: String, forceRefresh: Boolean): List<VideoInfoModel> {
         if (forceRefresh || videoFiles.isEmpty()) {
-            loadVideos()
+            val videoFolders = loadVideos()
+            return videoFolders[folderName] ?: emptyList()
         }
         return videoFiles[folderName] ?: emptyList()
     }
 
-    private suspend fun loadVideos() {
+    private suspend fun loadVideos(): Map<String, List<VideoInfoModel>>{
         videoFiles = fileManager.getVideos()
         _rootVideoFolderNamesAndCount.emit(videoFiles.map { it.key to it.value.count() })
+        return videoFiles
     }
 }

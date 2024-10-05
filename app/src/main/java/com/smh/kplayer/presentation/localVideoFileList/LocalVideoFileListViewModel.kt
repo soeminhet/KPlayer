@@ -3,6 +3,7 @@ package com.smh.kplayer.presentation.localVideoFileList
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.toRoute
 import com.smh.kplayer.repository.GlobalFileRepository
 import com.smh.kplayer.route.LocalVideoFileListRoute
@@ -12,6 +13,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -31,7 +33,7 @@ class LocalVideoFileListViewModel @Inject constructor(
 
     init {
         updateFolderName()
-        getVideoFiles()
+        getVideoFiles(forceRefresh = false)
     }
 
     private fun updateFolderName() {
@@ -42,9 +44,9 @@ class LocalVideoFileListViewModel @Inject constructor(
         }
     }
 
-    private fun getVideoFiles() {
+    private fun getVideoFiles(forceRefresh: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
-            val files = globalFileRepository.getVideosInFolder(route.folderName)
+            val files = globalFileRepository.getVideosInFolder(route.folderName, forceRefresh = forceRefresh)
             _uiState.update {
                 it.copy(
                     videoFiles = files
@@ -65,9 +67,19 @@ class LocalVideoFileListViewModel @Inject constructor(
             }.awaitAll()
         }
     }
+
+    fun forceRefresh() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true) }
+            getVideoFiles(forceRefresh = true)
+            delay(300)
+            _uiState.update { it.copy(isRefreshing = false) }
+        }
+    }
 }
 
 data class LocalVideoFileUiState(
+    val isRefreshing: Boolean = false,
     val folderName: String = "",
     val videoFiles: List<VideoInfoModel> = emptyList()
 )
