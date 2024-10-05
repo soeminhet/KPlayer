@@ -58,7 +58,6 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
-import androidx.media3.exoplayer.DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.dash.DashMediaSource
 import androidx.media3.exoplayer.hls.HlsMediaSource
@@ -142,7 +141,6 @@ fun VideoPlayer(
             .setRenderersFactory(
                 NextRenderersFactory(context)
                     .setEnableDecoderFallback(true)
-                    .setExtensionRendererMode(EXTENSION_RENDERER_MODE_ON)
             )
             .setTrackSelector(DefaultTrackSelector(context))
             .setLoadControl(loadControl)
