@@ -70,9 +70,9 @@ fun NetworkVideoLinkDialogContent(
             },
             textStyle = MaterialTheme.typography.bodyMedium,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = BlueAdaptive,
+                focusedBorderColor = MaterialTheme.colorScheme.onPrimary,
                 focusedTextColor = MaterialTheme.colorScheme.onPrimary,
-                focusedLabelColor = BlueAdaptive,
+                focusedLabelColor = MaterialTheme.colorScheme.onPrimary,
                 cursorColor = MaterialTheme.colorScheme.onPrimary
             )
         )
